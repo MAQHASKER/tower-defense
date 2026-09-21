@@ -6,26 +6,10 @@ extends Node3D
 var path: Path
 
 func _ready() -> void:
-    GameManager.reset()
-    GameManager.gold_changed.connect(_on_gold_changed)
-    GameManager.base_hp_changed.connect(_on_base_hp_changed)
-    GameManager.game_over.connect(_on_game_over)
-
     path = Path.new()
     build_ground()
     build_path_visual()
-    spawn_test_cube()
-    spawn_test_enemy()
     spawn_test_tower()
-
-func _on_gold_changed(new_gold: int) -> void:
-    print("Золото: ", new_gold)
-
-func _on_base_hp_changed(new_hp: float, max_hp: float) -> void:
-    print("HP ратуши: ", new_hp, "/", max_hp)
-
-func _on_game_over() -> void:
-    print("ПОРАЖЕНИЕ")
 
 func build_ground() -> void:
     var mesh := BoxMesh.new()

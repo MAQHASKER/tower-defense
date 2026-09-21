@@ -49,6 +49,9 @@ func damage_base(amount: float) -> void:
 func next_wave() -> void:
     current_wave += 1
     wave_changed.emit(current_wave, total_waves)
-    if current_wave >= total_waves:
-        is_game_over = true
-        game_won.emit()
+
+func win_game() -> void:
+    if is_game_over:
+        return
+    is_game_over = true
+    game_won.emit()

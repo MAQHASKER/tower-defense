@@ -1,0 +1,13 @@
+{
+  "stages": [
+	{
+	  "id": 1,
+	  "name": "Деревня",
+	  "waves": [
+		{ "enemies": [{"type": "goblin", "count": 5}] },
+		{ "enemies": [{"type": "goblin", "count": 8}] },
+		{ "enemies": [{"type": "goblin", "count": 12}] }
+	  ]
+	}
+  ]
+}
