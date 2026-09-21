@@ -19,6 +19,7 @@ var _mesh: MeshInstance3D
 func setup(path: Array[Vector2i], color: Color = Constants.COLOR_ENEMY) -> void:
     path_cells = path
     current_index = 0
+    add_to_group("enemies")
 
     _mesh = MeshInstance3D.new()
     var box := BoxMesh.new()
