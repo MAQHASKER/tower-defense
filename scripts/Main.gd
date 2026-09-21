@@ -10,6 +10,7 @@ func _ready() -> void:
     build_ground()
     build_path_visual()
     spawn_test_cube()
+    spawn_test_enemy()
 
 func build_ground() -> void:
     var mesh := BoxMesh.new()
@@ -57,3 +58,8 @@ func spawn_test_cube() -> void:
     cube.position = Constants.cell_to_world(Vector2i(5, 5))
     cube.position.y = 0.5
     entities.add_child(cube)
+    
+func spawn_test_enemy() -> void:
+    var enemy := Enemy.new()
+    enemy.setup(path.cells)
+    entities.add_child(enemy)
