@@ -53,9 +53,14 @@ func _process(delta: float) -> void:
         # Если дошли до конца — пока просто останавливаемся
         if current_index >= path_cells.size() - 1:
             position = Constants.cell_to_world(path_cells[current_index])
+            _reach_base()
             return
 
     position = from_pos.lerp(to_pos, _progress)
+
+func _reach_base() -> void:
+    GameManager.damage_base(damage)
+    queue_free()
 
 func take_damage(amount: float) -> void:
     hp -= amount
@@ -63,4 +68,5 @@ func take_damage(amount: float) -> void:
         die()
 
 func die() -> void:
+    GameManager.add_gold(reward)
     queue_free()
