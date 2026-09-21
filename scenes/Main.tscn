@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://b4pwvgvcd3dlb"]
+
+[ext_resource type="Script" uid="uid://bbfmh31pc0xnk" path="res://scripts/Main.gd" id="1_rvslj"]
+[ext_resource type="Script" uid="uid://drfsb1mi483wd" path="res://scripts/CameraController.gd" id="2_0bbpv"]
+
+[node name="Main" type="Node3D" unique_id=1797040545]
+script = ExtResource("1_rvslj")
+
+[node name="Ground" type="Node3D" parent="." unique_id=1392532649]
+
+[node name="Entities" type="Node3D" parent="." unique_id=1879566030]
+
+[node name="Camera" type="Camera3D" parent="." unique_id=2043334383]
+script = ExtResource("2_0bbpv")
