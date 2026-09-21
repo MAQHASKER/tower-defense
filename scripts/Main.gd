@@ -3,8 +3,12 @@ extends Node3D
 @onready var ground: Node3D = $Ground
 @onready var entities: Node3D = $Entities
 
+var path: Path
+
 func _ready() -> void:
+    path = Path.new()
     build_ground()
+    build_path_visual()
     spawn_test_cube()
 
 func build_ground() -> void:
@@ -26,6 +30,20 @@ func build_ground() -> void:
         Constants.MAP_HEIGHT * Constants.CELL_SIZE / 2.0
     )
     ground.add_child(instance)
+
+func build_path_visual() -> void:
+    var mesh := BoxMesh.new()
+    mesh.size = Vector3(Constants.CELL_SIZE * 0.95, 0.05, Constants.CELL_SIZE * 0.95)
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = Constants.COLOR_PATH
+    mesh.material = mat
+
+    for cell in path.cells:
+        var instance := MeshInstance3D.new()
+        instance.mesh = mesh
+        instance.position = Constants.cell_to_world(cell)
+        instance.position.y = 0.05
+        ground.add_child(instance)
 
 func spawn_test_cube() -> void:
     var mesh := BoxMesh.new()
