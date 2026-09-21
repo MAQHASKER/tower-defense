@@ -70,6 +70,5 @@ func _check_victory() -> void:
 	if GameManager.is_game_over:
 		return
 	var alive := get_tree().get_nodes_in_group("enemies").size()
-	print("Живых врагов: ", alive, " / заспавнено: ", _spawned_enemies, " / всего: ", _total_enemies)
 	if alive == 0:
 		GameManager.win_game()
