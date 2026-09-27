@@ -60,9 +60,9 @@ func _spawn_wave_async(wave: Dictionary) -> void:
 			_spawn_enemy(entry.type)
 			await get_tree().create_timer(SPAWN_INTERVAL).timeout
 
-func _spawn_enemy(_type: String) -> void:
+func _spawn_enemy(enemy_type: String) -> void:
 	var enemy := Enemy.new()
-	enemy.setup(get_parent().path.cells)   # ← берём path здесь
+	enemy.setup(get_parent().path.cells, enemy_type)
 	entities.add_child(enemy)
 	_spawned_enemies += 1
 

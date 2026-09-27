@@ -1,0 +1,31 @@
+{
+  "enemies": {
+	"goblin": {
+	  "hp": 30,
+	  "speed": 1.5,
+	  "damage": 5,
+	  "attack_speed": 1.0,
+	  "reward": 10,
+	  "color": [0.8, 0.3, 0.3],
+	  "size": 1.0
+	},
+	"horseman": {
+	  "hp": 60,
+	  "speed": 2.5,
+	  "damage": 15,
+	  "attack_speed": 0.8,
+	  "reward": 25,
+	  "color": [0.3, 0.4, 0.9],
+	  "size": 1.2
+	},
+	"ogre": {
+	  "hp": 200,
+	  "speed": 0.8,
+	  "damage": 30,
+	  "attack_speed": 1.5,
+	  "reward": 50,
+	  "color": [0.9, 0.8, 0.3],
+	  "size": 1.5
+	}
+  }
+}

@@ -5,8 +5,8 @@
 	  "name": "Деревня",
 	  "waves": [
 		{ "enemies": [{"type": "goblin", "count": 5}] },
-		{ "enemies": [{"type": "goblin", "count": 8}] },
-		{ "enemies": [{"type": "goblin", "count": 12}] }
+		{ "enemies": [{"type": "goblin", "count": 6}, {"type": "horseman", "count": 2}] },
+		{ "enemies": [{"type": "goblin", "count": 8}, {"type": "horseman", "count": 3}, {"type": "ogre", "count": 1}] }
 	  ]
 	}
   ]
