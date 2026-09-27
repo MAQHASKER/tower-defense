@@ -8,7 +8,7 @@ signal game_over()
 signal game_won()
 
 # Состояние
-var gold: int = 200
+var gold: int = 2000
 var base_hp: float = 1000.0
 var base_max_hp: float = 1000.0
 var current_wave: int = 0
@@ -16,7 +16,7 @@ var total_waves: int = 3
 var is_game_over: bool = false
 
 func reset() -> void:
-    gold = 200
+    gold = 2000
     base_hp = base_max_hp
     current_wave = 0
     is_game_over = false

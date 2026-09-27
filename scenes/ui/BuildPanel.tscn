@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ckelhfhwqqjy8"]
+
+[ext_resource type="Script" uid="uid://cbnwyhovxl4gh" path="res://scripts/ui/BuildPanel.gd" id="1_pcwhb"]
+
+[node name="BuildPanel" type="CanvasLayer" unique_id=911984422]
+script = ExtResource("1_pcwhb")

@@ -27,5 +27,25 @@
 	  "color": [0.9, 0.8, 0.3],
 	  "size": 1.5
 	}
+  },
+  "towers": {
+	"archer": {
+	  "cost": 100,
+	  "damage": 10,
+	  "range_cells": 3.5,
+	  "cooldown": 0.5,
+	  "color": [0.3, 0.7, 0.3]
+	},
+	"ballista": {
+	  "cost": 250,
+	  "damage": 80,
+	  "range_cells": 6.5,
+	  "cooldown": 2.5,
+	  "color": [0.7, 0.4, 0.2]
+	},
+	"barracks": {
+	  "cost": 150,
+	  "color": [0.5, 0.5, 0.7]
+	}
   }
 }
