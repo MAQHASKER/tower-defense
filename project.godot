@@ -24,6 +24,10 @@ GameManager="*uid://dsyow7v6wryw0"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/ollama_assistant/plugin.cfg")
+
 [input]
 
 ui_left={

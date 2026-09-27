@@ -7,6 +7,9 @@ var max_hp: float = 30.0
 var speed: float = 1.5          # клеток в секунду
 var damage: float = 5.0
 var reward: int = 10
+var attack_speed: float = 1.0   # секунд между ударами
+var _attack_timer: float = 0.0
+var _reached_base: bool = false
 
 # Путь
 var path_cells: Array[Vector2i] = []
@@ -36,31 +39,40 @@ func setup(path: Array[Vector2i], color: Color = Constants.COLOR_ENEMY) -> void:
         position = Constants.cell_to_world(path_cells[0])
 
 func _process(delta: float) -> void:
+    if _reached_base:
+        _attack_timer -= delta
+        if _attack_timer <= 0.0:
+            GameManager.damage_base(damage)
+            _attack_timer = attack_speed
+        return
+
     if path_cells.size() < 2:
         return
-    if current_index >= path_cells.size() - 1:
+
+    # Останавливаемся за 2 клетки до конца пути (перед ратушей)
+    var stop_index: int = max(1, path_cells.size() - 3)
+    if current_index >= stop_index:
+        _reach_base()
         return
 
     var from_pos := Constants.cell_to_world(path_cells[current_index])
     var to_pos := Constants.cell_to_world(path_cells[current_index + 1])
 
-    # Скорость в клетках/сек → доля пути за кадр
-    _progress += (speed / 1.0) * delta
+    _progress += speed * delta
 
     if _progress >= 1.0:
         _progress = 0.0
         current_index += 1
-        # Если дошли до конца — пока просто останавливаемся
-        if current_index >= path_cells.size() - 1:
-            position = Constants.cell_to_world(path_cells[current_index])
+        if current_index >= stop_index:
+            position = Constants.cell_to_world(path_cells[stop_index])
             _reach_base()
             return
 
     position = from_pos.lerp(to_pos, _progress)
 
 func _reach_base() -> void:
-    GameManager.damage_base(damage)
-    queue_free()
+    _reached_base = true
+    _attack_timer = attack_speed
 
 func take_damage(amount: float) -> void:
     hp -= amount
