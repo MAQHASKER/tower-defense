@@ -7,7 +7,8 @@
 	  "attack_speed": 1.0,
 	  "reward": 10,
 	  "color": [0.8, 0.3, 0.3],
-	  "size": 1.0
+	  "size": 1.0,
+	  "can_be_blocked": true
 	},
 	"horseman": {
 	  "hp": 60,
@@ -16,7 +17,8 @@
 	  "attack_speed": 0.8,
 	  "reward": 25,
 	  "color": [0.3, 0.4, 0.9],
-	  "size": 1.2
+	  "size": 1.2,
+	  "can_be_blocked": false
 	},
 	"ogre": {
 	  "hp": 200,
@@ -25,7 +27,8 @@
 	  "attack_speed": 1.5,
 	  "reward": 50,
 	  "color": [0.9, 0.8, 0.3],
-	  "size": 1.5
+	  "size": 1.5,
+	  "can_be_blocked": true
 	}
   },
   "towers": {

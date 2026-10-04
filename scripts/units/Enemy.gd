@@ -8,6 +8,7 @@ var speed: float = 1.5
 var damage: float = 5.0
 var attack_speed: float = 1.0
 var reward: int = 10
+var can_be_blocked: bool = true
 
 # Путь
 var path_cells: Array[Vector2i] = []
@@ -52,6 +53,7 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin") -> void:
 		var c: Array = stats.get("color", [0.8, 0.3, 0.3])
 		color = Color(c[0], c[1], c[2])
 		size = stats.get("size", 1.0)
+		can_be_blocked = stats.get("can_be_blocked", true)
 
 	# Визуал
 	_mesh = MeshInstance3D.new()
@@ -74,6 +76,13 @@ func _process(delta: float) -> void:
 			GameManager.damage_base(damage)
 			_attack_timer = attack_speed
 		return
+
+	# Проверка блокировки воином (всадник не блокируется)
+	if can_be_blocked:
+		var blocker := _find_blocker()
+		if blocker:
+			_attack_blocker(blocker, delta)
+			return
 
 	if path_cells.size() < 2:
 		return
@@ -110,3 +119,24 @@ func take_damage(amount: float) -> void:
 func die() -> void:
 	GameManager.add_gold(reward)
 	queue_free()
+
+func _find_blocker() -> Soldier:
+	var range_world := 1.5 * Constants.CELL_SIZE   # радиус блокировки 2 клетки
+	var closest: Soldier = null
+	var closest_dist := INF
+
+	for soldier in get_tree().get_nodes_in_group("soldiers"):
+		if not is_instance_valid(soldier):
+			continue
+		var d := global_position.distance_to(soldier.global_position)
+		if d <= range_world and d < closest_dist:
+			closest = soldier
+			closest_dist = d
+
+	return closest
+
+func _attack_blocker(soldier: Soldier, delta: float) -> void:
+	_attack_timer -= delta
+	if _attack_timer <= 0.0:
+		soldier.take_damage(damage)
+		_attack_timer = attack_speed

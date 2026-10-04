@@ -5,7 +5,6 @@
 [ext_resource type="Script" uid="uid://c4vr8wkgpb84d" path="res://scripts/WaveSpawner.gd" id="2_rarhs"]
 [ext_resource type="PackedScene" uid="uid://c36webiv4r64f" path="res://scenes/ui/HUD.tscn" id="3_0bbpv"]
 [ext_resource type="PackedScene" uid="uid://ckelhfhwqqjy8" path="res://scenes/ui/BuildPanel.tscn" id="5_vcsgt"]
-[ext_resource type="Script" uid="uid://cbnwyhovxl4gh" path="res://scripts/ui/BuildPanel.gd" id="6_c01mt"]
 
 [sub_resource type="Sky" id="Sky_4t1ab"]
 
@@ -38,4 +37,3 @@ shadow_enabled = true
 environment = SubResource("Environment_xwvtf")
 
 [node name="BuildPanel" parent="." unique_id=911984422 instance=ExtResource("5_vcsgt")]
-script = ExtResource("6_c01mt")

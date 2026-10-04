@@ -70,10 +70,16 @@ func _try_build_tower(screen_pos: Vector2) -> void:
 		print("Не хватает золота")
 		return
 
-	var tower := Tower.new()
-	tower.position = Constants.cell_to_world(cell)
-	tower.setup(selected_tower_type, cell)
-	entities.add_child(tower)
+	if selected_tower_type == "barracks":
+		var barracks := Barracks.new()
+		barracks.position = Constants.cell_to_world(cell)
+		entities.add_child(barracks)
+		barracks.setup(cell)
+	else:
+		var tower := Tower.new()
+		tower.position = Constants.cell_to_world(cell)
+		entities.add_child(tower)
+		tower.setup(selected_tower_type, cell)
 	grid.occupy(cell)
 
 	print("Построена башня: ", selected_tower_type, " на ", cell)
