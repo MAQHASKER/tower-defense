@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cxiis8hkfjh2x"]
+
+[ext_resource type="Script" uid="uid://b5pj0tfrr7ta" path="res://scripts/ui/TowerPanel.gd" id="1_85r87"]
+
+[node name="TowerPanel" type="CanvasLayer" unique_id=1237167193]
+script = ExtResource("1_85r87")

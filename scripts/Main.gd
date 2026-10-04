@@ -3,7 +3,9 @@ extends Node3D
 @onready var ground: Node3D = $Ground
 @onready var entities: Node3D = $Entities
 @onready var build_panel: CanvasLayer = $BuildPanel
+@onready var tower_panel: CanvasLayer = $TowerPanel
 
+var selected_tower: Node3D = null
 var path: Path
 var grid: Grid
 var selected_tower_type: String = ""
@@ -23,6 +25,8 @@ func _ready() -> void:
 	build_panel.set_costs(tower_costs)
 	build_panel.tower_selected.connect(_on_tower_selected)
 	build_panel.start_wave_pressed.connect(_on_start_wave_pressed)
+	tower_panel.upgrade_pressed.connect(_on_upgrade_pressed)
+	tower_panel.sell_pressed.connect(_on_sell_pressed)
 
 func _load_tower_costs() -> void:
 	var file := FileAccess.open("res://data/balance.json", FileAccess.READ)
@@ -45,6 +49,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			if selected_tower_type != "":
 				_try_build_tower(event.position)
+			else:
+				_try_select_tower(event.position)
 
 func _try_build_tower(screen_pos: Vector2) -> void:
 	var camera := get_viewport().get_camera_3d()
@@ -81,6 +87,8 @@ func _try_build_tower(screen_pos: Vector2) -> void:
 		entities.add_child(tower)
 		tower.setup(selected_tower_type, cell)
 	grid.occupy(cell)
+	
+	selected_tower_type = ""
 
 	print("Построена башня: ", selected_tower_type, " на ", cell)
 
@@ -135,3 +143,52 @@ func spawn_base() -> void:
 	base.position = Constants.cell_to_world(path.get_end())
 	base.setup()
 	entities.add_child(base)
+
+func _try_select_tower(screen_pos: Vector2) -> void:
+	var cell = _screen_to_cell(screen_pos)
+	if cell == null:
+		_deselect_tower()
+		return
+
+	for child in entities.get_children():
+		if child.has_method("get_cell") and child.get_cell() == cell:
+			_select_tower(child)
+			return
+
+	_deselect_tower()
+
+func _screen_to_cell(screen_pos: Vector2):
+	var camera := get_viewport().get_camera_3d()
+	if not camera:
+		return null
+	var from := camera.project_ray_origin(screen_pos)
+	var to := from + camera.project_ray_normal(screen_pos) * 1000
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	var result := space.intersect_ray(query)
+	if result.is_empty():
+		return null
+	var world_pos: Vector3 = result.position
+	return Vector2i(int(world_pos.x / Constants.CELL_SIZE), int(world_pos.z / Constants.CELL_SIZE))
+
+func _select_tower(tower: Node3D) -> void:
+	selected_tower = tower
+	tower_panel.show_for(tower)
+
+func _deselect_tower() -> void:
+	selected_tower = null
+	tower_panel.hide_panel()
+
+func _on_upgrade_pressed() -> void:
+	if not is_instance_valid(selected_tower):
+		return
+	if selected_tower.upgrade():
+		tower_panel.refresh()
+
+func _on_sell_pressed() -> void:
+	if not is_instance_valid(selected_tower):
+		return
+	var cell: Vector2i = selected_tower.get_cell()
+	selected_tower.sell()
+	grid.release(cell)
+	_deselect_tower()
