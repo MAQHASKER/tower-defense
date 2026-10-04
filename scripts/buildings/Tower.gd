@@ -13,7 +13,7 @@ var base_cost: int = 0
 var total_invested: int = 0
 
 var _cooldown_timer: float = 0.0
-var _mesh: MeshInstance3D
+var _mesh: Node3D
 var _base_size: Vector3
 
 static var _balance_cache: Dictionary = {}
@@ -44,21 +44,29 @@ func setup(type: String, tower_cell: Vector2i) -> void:
 		var c: Array = stats.get("color", [0.4, 0.4, 0.8])
 		color = Color(c[0], c[1], c[2])
 
-	_mesh = MeshInstance3D.new()
-	var box := BoxMesh.new()
-	if type == "ballista":
-		box.size = Vector3(1.3, 4.0, 1.3)
-	elif type == "archer":
-		box.size = Vector3(1.2, 3.0, 1.2)
+	# Модель или куб — в зависимости от типа
+	if type == "archer":
+		var scene: PackedScene = load("res://assets/models/towers/archer_lvl1.glb")
+		if scene:
+			_mesh = scene.instantiate()
+			_base_size = Vector3(1.2, 3.0, 1.2)
+		else:
+			_mesh = _make_fallback_cube(Vector3(1.2, 3.0, 1.2), color)
+			_base_size = Vector3(1.2, 3.0, 1.2)
 	else:
-		box.size = Vector3(1.6, 1.6, 1.6)
-	_base_size = box.size
+		var box := BoxMesh.new()
+		if type == "ballista":
+			box.size = Vector3(1.3, 4.0, 1.3)
+		else:
+			box.size = Vector3(1.6, 1.6, 1.6)
+		_base_size = box.size
+		_mesh = MeshInstance3D.new()
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = color
+		box.material = mat
+		_mesh.mesh = box
+		_mesh.position.y = box.size.y / 2.0
 
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	box.material = mat
-	_mesh.mesh = box
-	_mesh.position.y = box.size.y / 2.0
 	add_child(_mesh)
 
 func _process(delta: float) -> void:
@@ -136,3 +144,14 @@ func upgrade() -> bool:
 func sell() -> void:
 	GameManager.add_gold(get_sell_value())
 	queue_free()
+
+func _make_fallback_cube(size: Vector3, color: Color) -> MeshInstance3D:
+	var m := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	box.material = mat
+	m.mesh = box
+	m.position.y = size.y / 2.0
+	return m
