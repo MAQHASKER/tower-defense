@@ -6,6 +6,7 @@ signal wave_changed(current: int, total: int)
 signal base_hp_changed(new_hp: float, max_hp: float)
 signal game_over()
 signal game_won()
+signal wave_start_requested()
 
 # Состояние
 var gold: int = 2000
@@ -49,6 +50,11 @@ func damage_base(amount: float) -> void:
 func next_wave() -> void:
     current_wave += 1
     wave_changed.emit(current_wave, total_waves)
+
+func request_start_wave() -> void:
+    if is_game_over:
+        return
+    wave_start_requested.emit()
 
 func win_game() -> void:
     if is_game_over:

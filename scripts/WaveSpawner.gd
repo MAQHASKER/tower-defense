@@ -2,6 +2,7 @@ extends Node3D
 
 const WAVE_INTERVAL := 15.0   # для теста 15 сек (в дизайне 30)
 const SPAWN_INTERVAL := 0.8   # задержка между врагами внутри волны
+const EARLY_START_BONUS := 25
 
 var _waves: Array = []
 var _time: float = 0.0
@@ -19,6 +20,7 @@ func _ready() -> void:
 	GameManager.reset()
 	GameManager.total_waves = _waves.size()
 	GameManager.wave_changed.emit(0, _waves.size())
+	GameManager.wave_start_requested.connect(_on_wave_start_requested)   # ← новая строка
 	_next_wave_time = 2.0   # первая волна через 2 сек
 
 func _load_stage(stage_id: int) -> void:
@@ -72,3 +74,13 @@ func _check_victory() -> void:
 	var alive := get_tree().get_nodes_in_group("enemies").size()
 	if alive == 0:
 		GameManager.win_game()
+
+func _on_wave_start_requested() -> void:
+	if GameManager.is_game_over:
+		return
+	if _next_wave_index >= _waves.size():
+		return   # все волны уже заспавнены
+	_start_wave(_next_wave_index)
+	_next_wave_index += 1
+	_next_wave_time = _time + WAVE_INTERVAL
+	GameManager.add_gold(EARLY_START_BONUS)

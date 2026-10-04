@@ -38,7 +38,7 @@ func _on_tower_selected(tower_type: String) -> void:
 	print("Выбрана башня: ", tower_type)
 
 func _on_start_wave_pressed() -> void:
-	print("Начать волну досрочно (пока не работает)")
+	GameManager.request_start_wave()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
