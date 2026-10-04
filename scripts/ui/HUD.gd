@@ -42,8 +42,6 @@ func _connect_signals() -> void:
     GameManager.gold_changed.connect(_on_gold_changed)
     GameManager.wave_changed.connect(_on_wave_changed)
     GameManager.base_hp_changed.connect(_on_hp_changed)
-    GameManager.game_over.connect(_on_game_over)     # ← есть?
-    GameManager.game_won.connect(_on_game_won)       # ← есть?
 
 func _on_gold_changed(new_gold: int) -> void:
     _gold_label.text = "💰 %d" % new_gold
@@ -53,11 +51,3 @@ func _on_wave_changed(current: int, total: int) -> void:
 
 func _on_hp_changed(new_hp: float, max_hp: float) -> void:
     _hp_label.text = "❤️ %d / %d" % [new_hp, max_hp]
-
-func _on_game_over() -> void:
-    _wave_label.text = "ПОРАЖЕНИЕ"
-    _wave_label.add_theme_color_override("font_color", Color.RED)
-
-func _on_game_won() -> void:
-    _wave_label.text = "ПОБЕДА!"
-    _wave_label.add_theme_color_override("font_color", Color.GOLD)

@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c36webiv4r64f" path="res://scenes/ui/HUD.tscn" id="3_0bbpv"]
 [ext_resource type="PackedScene" uid="uid://ckelhfhwqqjy8" path="res://scenes/ui/BuildPanel.tscn" id="5_vcsgt"]
 [ext_resource type="PackedScene" uid="uid://cxiis8hkfjh2x" path="res://scenes/ui/TowerPanel.tscn" id="6_c01mt"]
+[ext_resource type="PackedScene" uid="uid://efiojeyexusf" path="res://scenes/ui/EndScreen.tscn" id="7_nxtc6"]
 
 [sub_resource type="Sky" id="Sky_4t1ab"]
 
@@ -40,3 +41,5 @@ environment = SubResource("Environment_xwvtf")
 [node name="BuildPanel" parent="." unique_id=911984422 instance=ExtResource("5_vcsgt")]
 
 [node name="TowerPanel" parent="." unique_id=1237167193 instance=ExtResource("6_c01mt")]
+
+[node name="EndScreen" parent="." unique_id=1428188236 instance=ExtResource("7_nxtc6")]
