@@ -176,6 +176,11 @@ func _make_placeholder_box() -> MeshInstance3D:
 # а модель можно экспортировать в любом масштабе.
 func _fit_visual(visual: Node3D) -> void:
 	var origin := global_position
+	# Замер делаем в «чистом» положении: иначе в него попадёт собственная
+	# позиция визуала, и низ уедет под землю на половину высоты.
+	# Именно так кубы врагов оказались вкопаны по пояс, из-за чего огр
+	# и всадник выглядели ниже солдата.
+	visual.position = Vector3.ZERO
 	var bounds := _measure_world(visual)
 	if bounds.size.y <= 0.001:
 		return
