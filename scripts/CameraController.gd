@@ -1,16 +1,16 @@
 extends Camera3D
 
-@export var move_speed := 30.0
+@export var move_speed := 40.0
 @export var rotate_speed := 90.0     # градусов в секунду
-@export var zoom_speed := 4.0
-@export var min_distance := 25.0
-@export var max_distance := 90.0
+@export var zoom_speed := 3.0
+@export var min_distance := 12.0
+@export var max_distance := 50.0
 
 # Точка на земле, куда смотрит камера. Ставится в центр карты в _ready().
 var pivot: Vector3 = Vector3.ZERO
 var yaw: float = 45.0       # поворот вокруг Y
 var pitch: float = 50.0     # наклон вниз
-var distance: float = 50.0  # расстояние от pivot до камеры
+var distance: float = 25.0  # расстояние от pivot до камеры
 
 func _ready() -> void:
 	pivot = Constants.map_center()

@@ -1,6 +1,9 @@
 class_name Soldier
 extends Node3D
 
+# Размер коробки-заглушки в клетках (до появления модели из Blender)
+const SIZE_CELLS := Vector3(0.3, 0.6, 0.3)
+
 var hp: float = 50.0
 var max_hp: float = 50.0
 var damage: float = 5.0
@@ -20,14 +23,15 @@ func setup(hp_val: float = 50.0, dmg: float = 5.0) -> void:
 	damage = dmg
 	add_to_group("soldiers")
 
+	var box_size := SIZE_CELLS * Constants.CELL_SIZE
 	_mesh = MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(0.55, 0.55, 0.55)
+	box.size = box_size
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.4, 0.7, 1.0)
 	box.material = mat
 	_mesh.mesh = box
-	_mesh.position.y = 0.275
+	_mesh.position.y = box_size.y / 2.0
 	add_child(_mesh)
 	# home_position устанавливается снаружи, после add_child
 

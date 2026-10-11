@@ -1,6 +1,12 @@
 class_name Projectile
 extends Node3D
 
+# Размеры в клетках, чтобы снаряд масштабировался вместе с клеткой
+const RADIUS_CELLS := 0.075
+const HIT_DISTANCE_CELLS := 0.1
+# На какой высоте целиться во врага (доля клетки)
+const AIM_HEIGHT_CELLS := 0.25
+
 var speed: float = 20.0
 var damage: float = 10.0
 var target: Enemy = null
@@ -11,10 +17,11 @@ func setup(target_enemy: Enemy, dmg: float, color: Color = Color(1.0, 1.0, 0.4))
     target = target_enemy
     damage = dmg
 
+    var radius := RADIUS_CELLS * Constants.CELL_SIZE
     _mesh = MeshInstance3D.new()
     var sphere := SphereMesh.new()
-    sphere.radius = 0.15
-    sphere.height = 0.3
+    sphere.radius = radius
+    sphere.height = radius * 2.0
     var mat := StandardMaterial3D.new()
     mat.albedo_color = color
     sphere.material = mat
@@ -26,11 +33,11 @@ func _process(delta: float) -> void:
         queue_free()
         return
 
-    var target_pos := target.global_position + Vector3(0, 0.5, 0)
+    var target_pos := target.global_position + Vector3(0, AIM_HEIGHT_CELLS * Constants.CELL_SIZE, 0)
     var dir := target_pos - global_position
     var dist := dir.length()
 
-    if dist < 0.3:
+    if dist < HIT_DISTANCE_CELLS * Constants.CELL_SIZE:
         target.take_damage(damage)
         queue_free()
         return

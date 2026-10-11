@@ -4,6 +4,10 @@ extends Node3D
 const SOLDIER_COUNT := 5
 const RESPAWN_TIME := 15.0
 
+# Размеры в клетках, чтобы масштабироваться вместе с CELL_SIZE
+const SIZE_CELLS := Vector3(0.8, 0.8, 0.8)
+const SOLDIER_RADIUS_CELLS := 0.35
+
 var cell: Vector2i
 var soldiers: Array[Soldier] = []
 var _respawn_queue: Array[float] = []
@@ -37,15 +41,17 @@ func setup(barracks_cell: Vector2i) -> void:
 		base_cost = balance["barracks"].get("cost", 150)
 	total_invested = base_cost
 
+	var box_size := SIZE_CELLS * Constants.CELL_SIZE
+	_base_size = box_size
+
 	_mesh = MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(1.6, 1.6, 1.6)
-	_base_size = box.size
+	box.size = box_size
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.5, 0.5, 0.7)
 	box.material = mat
 	_mesh.mesh = box
-	_mesh.position.y = 0.8
+	_mesh.position.y = box_size.y / 2.0
 	add_child(_mesh)
 
 	for i in range(SOLDIER_COUNT):
@@ -63,7 +69,7 @@ func _spawn_soldier(index: int) -> void:
 
 func _get_offset(index: int) -> Vector3:
 	var angle := (float(index) / SOLDIER_COUNT) * TAU
-	var radius := 1.4
+	var radius := SOLDIER_RADIUS_CELLS * Constants.CELL_SIZE
 	return Vector3(cos(angle) * radius, 0, sin(angle) * radius)
 
 func _process(delta: float) -> void:

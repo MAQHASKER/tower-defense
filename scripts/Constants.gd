@@ -1,7 +1,7 @@
 class_name Constants
 extends RefCounted
 
-const CELL_SIZE := 2.0
+const CELL_SIZE := 3.0
 const MAP_WIDTH := 24
 const MAP_HEIGHT := 24
 

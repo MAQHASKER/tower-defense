@@ -10,6 +10,9 @@ var attack_speed: float = 1.0
 var reward: int = 10
 var can_be_blocked: bool = true
 
+# Габариты в метрах: ширина (X), высота (Y), длина вдоль пути (Z)
+var body_size: Vector3 = Vector3.ONE
+
 # Путь
 var path_cells: Array[Vector2i] = []
 var current_index: int = 0
@@ -39,7 +42,6 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin") -> void:
 
 	# Читаем характеристики из balance.json
 	var color: Color = Constants.COLOR_ENEMY
-	var size: float = 1.0
 
 	var balance := _load_balance()
 	if balance.has(enemy_type):
@@ -52,18 +54,22 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin") -> void:
 		reward = stats.get("reward", 10)
 		var c: Array = stats.get("color", [0.8, 0.3, 0.3])
 		color = Color(c[0], c[1], c[2])
-		size = stats.get("size", 1.0)
+		body_size = Vector3(
+			float(stats.get("width", 1.0)),
+			float(stats.get("height", 1.0)),
+			float(stats.get("depth", 1.0))
+		)
 		can_be_blocked = stats.get("can_be_blocked", true)
 
-	# Визуал
+	# Визуал: коробка по габаритам, стоит на земле
 	_mesh = MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(size, size, size)
+	box.size = body_size
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	box.material = mat
 	_mesh.mesh = box
-	_mesh.position.y = size / 2.0 + 0.01
+	_mesh.position.y = body_size.y / 2.0 + 0.01
 	add_child(_mesh)
 
 	if path_cells.size() > 0:
@@ -95,6 +101,11 @@ func _process(delta: float) -> void:
 	var from_pos := Constants.cell_to_world(path_cells[current_index])
 	var to_pos := Constants.cell_to_world(path_cells[current_index + 1])
 
+	# Разворот по движению: длина врага (локальная ось Z) смотрит вдоль пути
+	var dir := to_pos - from_pos
+	if dir.length_squared() > 0.0001:
+		rotation.y = atan2(dir.x, dir.z)
+
 	_progress += speed * delta
 
 	if _progress >= 1.0:
@@ -121,7 +132,7 @@ func die() -> void:
 	queue_free()
 
 func _find_blocker() -> Soldier:
-	var range_world := 1.5 * Constants.CELL_SIZE   # радиус блокировки 2 клетки
+	var range_world := 1.5 * Constants.CELL_SIZE   # радиус блокировки, в клетках
 	var closest: Soldier = null
 	var closest_dist := INF
 

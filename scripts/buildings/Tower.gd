@@ -1,6 +1,12 @@
 class_name Tower
 extends Node3D
 
+# Заглушки-кубы на время, пока нет моделей из Blender.
+# Размеры заданы в клетках, чтобы масштабироваться вместе с CELL_SIZE.
+const BALLISTA_SIZE_CELLS := Vector3(0.65, 2.0, 0.65)
+const PLACEHOLDER_SIZE_CELLS := Vector3(0.8, 0.8, 0.8)
+const ARCHER_FALLBACK_SIZE_CELLS := Vector3(0.4, 1.0, 0.4)
+
 var tower_type: String = "archer"
 var damage: float = 10.0
 var range_cells: float = 3.5
@@ -15,6 +21,7 @@ var total_invested: int = 0
 var _cooldown_timer: float = 0.0
 var _mesh: Node3D
 var _base_size: Vector3
+var _model_fit: float = 1.0
 
 static var _balance_cache: Dictionary = {}
 
@@ -44,30 +51,64 @@ func setup(type: String, tower_cell: Vector2i) -> void:
 		var c: Array = stats.get("color", [0.4, 0.4, 0.8])
 		color = Color(c[0], c[1], c[2])
 
-	# Модель или куб — в зависимости от типа
 	if type == "archer":
 		var scene: PackedScene = load("res://assets/models/towers/archer_lvl1.glb")
 		if scene:
 			_mesh = scene.instantiate()
-			_base_size = Vector3(1.2, 3.0, 1.2)
 		else:
-			_mesh = _make_fallback_cube(Vector3(1.2, 3.0, 1.2), color)
-			_base_size = Vector3(1.2, 3.0, 1.2)
+			_mesh = _make_fallback_cube(ARCHER_FALLBACK_SIZE_CELLS * Constants.CELL_SIZE, color)
+		add_child(_mesh)
+		_fit_model_to_cell(_mesh)
 	else:
+		var size_cells := BALLISTA_SIZE_CELLS if type == "ballista" else PLACEHOLDER_SIZE_CELLS
+		var box_size := size_cells * Constants.CELL_SIZE
+		_base_size = box_size
+
 		var box := BoxMesh.new()
-		if type == "ballista":
-			box.size = Vector3(1.3, 4.0, 1.3)
-		else:
-			box.size = Vector3(1.6, 1.6, 1.6)
-		_base_size = box.size
-		_mesh = MeshInstance3D.new()
+		box.size = box_size
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = color
 		box.material = mat
-		_mesh.mesh = box
-		_mesh.position.y = box.size.y / 2.0
 
-	add_child(_mesh)
+		var cube := MeshInstance3D.new()
+		cube.mesh = box
+		cube.position.y = box_size.y / 2.0
+		_mesh = cube
+		add_child(_mesh)
+
+# Подгоняет модель под клетку: ширина модели становится равна одной клетке.
+# Когда смоделируешь башню ровно в размер клетки (3 м), коэффициент станет 1.0
+# и подгонка перестанет что-либо менять.
+func _fit_model_to_cell(model: Node3D) -> void:
+	var bounds := _measure_world(model)
+	if bounds.size.x <= 0.001:
+		_base_size = Vector3(Constants.CELL_SIZE, Constants.CELL_SIZE * 2.0, Constants.CELL_SIZE)
+		return
+	_model_fit = Constants.CELL_SIZE / bounds.size.x
+	model.scale = Vector3.ONE * _model_fit
+	# высота после масштабирования — отсюда вылетает снаряд
+	_base_size = bounds.size * _model_fit
+
+# Габариты всех мешей поддерева в мировых координатах
+static func _measure_world(root: Node3D) -> AABB:
+	var mn := Vector3(1e9, 1e9, 1e9)
+	var mx := Vector3(-1e9, -1e9, -1e9)
+	var found := false
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		for ch in n.get_children():
+			stack.push_back(ch)
+			if ch is MeshInstance3D:
+				var a: AABB = ch.get_aabb()
+				for i in range(8):
+					var w: Vector3 = ch.global_transform * a.get_endpoint(i)
+					mn = mn.min(w)
+					mx = mx.max(w)
+					found = true
+	if not found:
+		return AABB()
+	return AABB(mn, mx - mn)
 
 func _process(delta: float) -> void:
 	_cooldown_timer -= delta
@@ -137,8 +178,8 @@ func upgrade() -> bool:
 	total_invested += cost
 	damage *= 1.3
 	range_cells *= 1.1
-	# Визуально чуть больше
-	_mesh.scale = Vector3.ONE * (1.0 + (level - 1) * 0.1)
+	# Визуально чуть больше (с учётом подгонки модели под клетку)
+	_mesh.scale = Vector3.ONE * _model_fit * (1.0 + (level - 1) * 0.1)
 	return true
 
 func sell() -> void:
