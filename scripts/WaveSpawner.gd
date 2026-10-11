@@ -1,5 +1,8 @@
 extends Node3D
 
+# Подключаем по пути, а не через class_name — см. комментарий в StageLoader.gd
+const StageLoader := preload("res://scripts/StageLoader.gd")
+
 const WAVE_INTERVAL := 15.0   # для теста 15 сек (в дизайне 30)
 const SPAWN_INTERVAL := 0.8   # задержка между врагами внутри волны
 const EARLY_START_BONUS := 25
@@ -16,28 +19,22 @@ var _all_spawned: bool = false
 @onready var entities: Node3D = get_parent().get_node("Entities")
 
 func _ready() -> void:
-	_load_stage(1)
+	_load_stage(GameManager.selected_stage)
 	GameManager.reset()
 	GameManager.total_waves = _waves.size()
 	GameManager.wave_changed.emit(0, _waves.size())
-	GameManager.wave_start_requested.connect(_on_wave_start_requested)   # ← новая строка
+	GameManager.wave_start_requested.connect(_on_wave_start_requested)
 	_next_wave_time = 2.0   # первая волна через 2 сек
 
 func _load_stage(stage_id: int) -> void:
-	var file := FileAccess.open("res://data/stages.json", FileAccess.READ)
-	if not file:
-		push_error("Не могу открыть stages.json")
+	_waves = StageLoader.get_waves(stage_id)
+	_total_enemies = 0
+	if _waves.is_empty():
+		push_error("Этап %d не найден или в нём нет волн" % stage_id)
 		return
-	var data: Dictionary = JSON.parse_string(file.get_as_text())
-	file.close()
-
-	for stage in data.stages:
-		if stage.id == stage_id:
-			_waves = stage.waves
-			for wave in _waves:
-				for entry in wave.enemies:
-					_total_enemies += entry.count
-			return
+	for wave in _waves:
+		for entry in wave.enemies:
+			_total_enemies += entry.count
 
 func _process(delta: float) -> void:
 	_time += delta

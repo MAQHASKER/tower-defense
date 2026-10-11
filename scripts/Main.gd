@@ -1,5 +1,8 @@
 extends Node3D
 
+# Подключаем по пути, а не через class_name — см. комментарий в StageLoader.gd
+const StageLoader := preload("res://scripts/StageLoader.gd")
+
 @onready var ground: Node3D = $Ground
 @onready var entities: Node3D = $Entities
 @onready var build_panel: CanvasLayer = $BuildPanel
@@ -12,7 +15,7 @@ var selected_tower_type: String = ""
 var tower_costs: Dictionary = {}
 
 func _ready() -> void:
-	path = Path.new()
+	path = _load_path(GameManager.selected_stage)
 	grid = Grid.new()
 	grid.mark_path(path.cells)
 	grid.mark_base(path.get_end())
@@ -27,6 +30,14 @@ func _ready() -> void:
 	build_panel.start_wave_pressed.connect(_on_start_wave_pressed)
 	tower_panel.upgrade_pressed.connect(_on_upgrade_pressed)
 	tower_panel.sell_pressed.connect(_on_sell_pressed)
+
+# Путь берётся из stages.json как ломаная; если её нет — прямая по умолчанию.
+func _load_path(stage_id: int) -> Path:
+	var corners := StageLoader.get_path_corners(stage_id)
+	if corners.size() >= 2:
+		return Path.from_corners(corners)
+	push_warning("Этап %d: путь не задан, использую прямую" % stage_id)
+	return Path.default_straight()
 
 func _load_tower_costs() -> void:
 	var file := FileAccess.open("res://data/balance.json", FileAccess.READ)

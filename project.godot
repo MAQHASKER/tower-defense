@@ -11,14 +11,14 @@ config_version=5
 [application]
 
 config/name="TowerDefense"
-run/main_scene="uid://b4pwvgvcd3dlb"
+run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 GameManager="*uid://dsyow7v6wryw0"
-
+McpInteractionServer="*res://autoload/mcp_interaction_server.gd"
 [display]
 
 window/stretch/mode="canvas_items"

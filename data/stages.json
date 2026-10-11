@@ -3,6 +3,7 @@
 	{
 	  "id": 1,
 	  "name": "Деревня",
+	  "path": [[0, 12], [21, 12]],
 	  "waves": [
 		{ "enemies": [{"type": "goblin", "count": 5}] },
 		{ "enemies": [{"type": "goblin", "count": 6}, {"type": "horseman", "count": 2}] },

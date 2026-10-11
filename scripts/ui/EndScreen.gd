@@ -60,12 +60,12 @@ func _build_ui() -> void:
 	restart_btn.pressed.connect(_on_restart)
 	vbox.add_child(restart_btn)
 
-	var exit_btn := Button.new()
-	exit_btn.text = "🚪 Выход"
-	exit_btn.custom_minimum_size = Vector2(0, 50)
-	exit_btn.add_theme_font_size_override("font_size", 18)
-	exit_btn.pressed.connect(_on_exit)
-	vbox.add_child(exit_btn)
+	var menu_btn := Button.new()
+	menu_btn.text = "🏠 В меню"
+	menu_btn.custom_minimum_size = Vector2(0, 50)
+	menu_btn.add_theme_font_size_override("font_size", 18)
+	menu_btn.pressed.connect(_on_menu)
+	vbox.add_child(menu_btn)
 
 func _on_game_won() -> void:
 	_title.text = "ПОБЕДА!"
@@ -87,5 +87,6 @@ func _on_restart() -> void:
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
-func _on_exit() -> void:
-	get_tree().quit()
+func _on_menu() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")

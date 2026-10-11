@@ -16,6 +16,9 @@ var current_wave: int = 0
 var total_waves: int = 3
 var is_game_over: bool = false
 
+# Какой этап выбран в меню (ставит StageSelect перед загрузкой Main.tscn)
+var selected_stage: int = 1
+
 func reset() -> void:
     gold = 2000
     base_hp = base_max_hp

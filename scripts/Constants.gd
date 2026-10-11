@@ -2,8 +2,8 @@ class_name Constants
 extends RefCounted
 
 const CELL_SIZE := 2.0
-const MAP_WIDTH := 28
-const MAP_HEIGHT := 28
+const MAP_WIDTH := 24
+const MAP_HEIGHT := 24
 
 const COLOR_GROUND := Color(0.3, 0.5, 0.3)
 const COLOR_PATH   := Color(0.6, 0.5, 0.4)
@@ -16,4 +16,19 @@ static func cell_to_world(cell: Vector2i) -> Vector3:
 		(cell.x + 0.5) * CELL_SIZE,
 		0.0,
 		(cell.y + 0.5) * CELL_SIZE
+	)
+
+# Центр карты в мировых координатах — вокруг него вращается камера.
+static func map_center() -> Vector3:
+	return Vector3(
+		MAP_WIDTH * CELL_SIZE / 2.0,
+		0.0,
+		MAP_HEIGHT * CELL_SIZE / 2.0
+	)
+
+# Центральная клетка карты.
+static func center_cell() -> Vector2i:
+	return Vector2i(
+		int(MAP_WIDTH / 2.0),
+		int(MAP_HEIGHT / 2.0)
 	)
