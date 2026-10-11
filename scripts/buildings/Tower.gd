@@ -5,7 +5,9 @@ extends Node3D
 # Размеры заданы в клетках, чтобы масштабироваться вместе с CELL_SIZE.
 const BALLISTA_SIZE_CELLS := Vector3(0.65, 2.0, 0.65)
 const PLACEHOLDER_SIZE_CELLS := Vector3(0.8, 0.8, 0.8)
-const ARCHER_FALLBACK_SIZE_CELLS := Vector3(0.4, 1.0, 0.4)
+const ARCHER_SIZE_CELLS := Vector3(0.6, 2.0, 0.6)
+# Модель башни из Blender — используется при Constants.USE_MODELS = true
+const ARCHER_MODEL_PATH := "res://assets/models/towers/archer_lvl1.glb"
 
 var tower_type: String = "archer"
 var damage: float = 10.0
@@ -52,13 +54,18 @@ func setup(type: String, tower_cell: Vector2i) -> void:
 		color = Color(c[0], c[1], c[2])
 
 	if type == "archer":
-		var scene: PackedScene = load("res://assets/models/towers/archer_lvl1.glb")
-		if scene:
+		var scene: PackedScene = null
+		if Constants.USE_MODELS:
+			scene = load(ARCHER_MODEL_PATH) as PackedScene
+		if scene != null:
 			_mesh = scene.instantiate()
+			add_child(_mesh)
+			_fit_model_to_cell(_mesh)
 		else:
-			_mesh = _make_fallback_cube(ARCHER_FALLBACK_SIZE_CELLS * Constants.CELL_SIZE, color)
-		add_child(_mesh)
-		_fit_model_to_cell(_mesh)
+			# Куб-заглушка: размер уже задан в клетках, подгонка не нужна
+			_base_size = ARCHER_SIZE_CELLS * Constants.CELL_SIZE
+			_mesh = _make_fallback_cube(_base_size, color)
+			add_child(_mesh)
 	else:
 		var size_cells := BALLISTA_SIZE_CELLS if type == "ballista" else PLACEHOLDER_SIZE_CELLS
 		var box_size := size_cells * Constants.CELL_SIZE

@@ -5,6 +5,10 @@ const CELL_SIZE := 3.0
 const MAP_WIDTH := 24
 const MAP_HEIGHT := 24
 
+# Модели из Blender. Пока выключены — вместо них рисуются кубы-заглушки.
+# Поставь true, чтобы вернуть модель башни лучника и гоблина.
+const USE_MODELS := false
+
 const COLOR_GROUND := Color(0.3, 0.5, 0.3)
 const COLOR_PATH   := Color(0.6, 0.5, 0.4)
 const COLOR_TOWER  := Color(0.4, 0.4, 0.8)

@@ -28,7 +28,7 @@ var _body_color: Color = Constants.COLOR_ENEMY
 
 # Отладочный контур хитбокса: показывает логический размер врага из
 # balance.json, под который подгоняется модель. Выключи перед релизом.
-const DEBUG_HITBOX := true
+const DEBUG_HITBOX := false
 
 # Раскладка врагов внутри одной клетки: X — поперёк пути, Z — вдоль
 var _slot_cols: int = 1
@@ -105,7 +105,7 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin", slot_index: int
 # --- Визуал ---
 
 func _create_visual(model_path: String) -> Node3D:
-	if model_path != "":
+	if Constants.USE_MODELS and model_path != "":
 		var res: Resource = load(model_path)
 		var node: Node3D = null
 		if res is PackedScene:
