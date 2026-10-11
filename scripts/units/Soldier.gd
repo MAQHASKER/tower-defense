@@ -1,5 +1,10 @@
 class_name Soldier
-extends Node3D
+extends CharacterBody3D
+
+# Слои физики: солдат опирается на постройки и на других солдат.
+# С врагами он не сталкивается — блокировка врагов считается по расстоянию.
+const LAYER_BUILDING := 1 << 2
+const LAYER_SOLDIER := 1 << 3
 
 # Размер коробки-заглушки в клетках (до появления модели из Blender)
 const SIZE_CELLS := Vector3(0.3, 0.6, 0.3)
@@ -33,6 +38,17 @@ func setup(hp_val: float = 50.0, dmg: float = 5.0) -> void:
 	_mesh.mesh = box
 	_mesh.position.y = box_size.y / 2.0
 	add_child(_mesh)
+
+	collision_layer = LAYER_SOLDIER
+	collision_mask = LAYER_BUILDING | LAYER_SOLDIER
+	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+
+	var cs := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = box_size
+	cs.shape = shape
+	cs.position.y = box_size.y / 2.0
+	add_child(cs)
 	# home_position устанавливается снаружи, после add_child
 
 func _process(delta: float) -> void:
@@ -58,7 +74,7 @@ func _engage_target(delta: float) -> void:
 
 	if dist > attack_dist_world:
 		var dir := (_current_target.global_position - global_position).normalized()
-		global_position += dir * move_speed * Constants.CELL_SIZE * delta
+		_move(dir * move_speed * Constants.CELL_SIZE * delta)
 	else:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
@@ -69,9 +85,14 @@ func _return_home(delta: float) -> void:
 	var dist := global_position.distance_to(home_position)
 	if dist > 0.1:
 		var dir := (home_position - global_position).normalized()
-		global_position += dir * move_speed * Constants.CELL_SIZE * delta
+		_move(dir * move_speed * Constants.CELL_SIZE * delta)
 	else:
 		global_position = home_position
+
+# Двигается и останавливается у построек и других солдат
+func _move(motion: Vector3) -> void:
+	motion.y = 0.0
+	move_and_collide(motion)
 
 func _find_enemy() -> Enemy:
 	var range_world := detect_range * Constants.CELL_SIZE

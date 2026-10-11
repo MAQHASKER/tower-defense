@@ -1,12 +1,18 @@
 class_name Barracks
-extends Node3D
+extends StaticBody3D
+
+# Слой зданий: солдаты о него опираются и не проходят сквозь
+const LAYER_BUILDING := 1 << 2
 
 const SOLDIER_COUNT := 5
 const RESPAWN_TIME := 15.0
 
 # Размеры в клетках, чтобы масштабироваться вместе с CELL_SIZE
 const SIZE_CELLS := Vector3(0.8, 0.8, 0.8)
-const SOLDIER_RADIUS_CELLS := 0.35
+# Солдаты стоят на окружности этого радиуса. Он обязан быть больше половины
+# постройки плюс половина солдата (1.2 + 0.45 = 1.65 м), иначе они окажутся
+# внутри казармы. 0.65 клетки = 1.95 м.
+const SOLDIER_RADIUS_CELLS := 0.65
 
 var cell: Vector2i
 var soldiers: Array[Soldier] = []
@@ -53,6 +59,16 @@ func setup(barracks_cell: Vector2i) -> void:
 	_mesh.mesh = box
 	_mesh.position.y = box_size.y / 2.0
 	add_child(_mesh)
+
+	# Постройка становится твёрдой для солдат
+	collision_layer = LAYER_BUILDING
+	collision_mask = 0
+	var cs := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = box_size
+	cs.shape = shape
+	cs.position.y = box_size.y / 2.0
+	add_child(cs)
 
 	for i in range(SOLDIER_COUNT):
 		_spawn_soldier(i)

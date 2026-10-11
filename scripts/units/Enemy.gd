@@ -1,5 +1,9 @@
 class_name Enemy
-extends Node3D
+extends CharacterBody3D
+
+# Слой физики: враги сталкиваются только друг с другом. Здания их не держат —
+# иначе враг мог бы застрять, задев постройку рядом с путём.
+const LAYER_ENEMY := 1 << 1
 
 # Характеристики — заполняются из balance.json через setup()
 var hp: float = 30.0
@@ -90,6 +94,12 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin", slot_index: int
 	add_child(_visual)
 	if DEBUG_HITBOX:
 		add_child(_make_hitbox_debug())
+
+	# Физика: кубический коллайдер по логическому размеру врага
+	collision_layer = LAYER_ENEMY
+	collision_mask = LAYER_ENEMY
+	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	add_child(_make_collision())
 	# Визуал подгоняется по мировой AABB, поэтому враг обязан быть в дереве:
 	# WaveSpawner добавляет его ДО вызова setup().
 	_fit_visual(_visual)
@@ -119,6 +129,15 @@ func _create_visual(model_path: String) -> Node3D:
 			return node
 		push_warning("Враг: не удалось загрузить модель %s" % model_path)
 	return _make_placeholder_box()
+
+# Кубический коллайдер по логическому размеру врага — он и есть хитбокс
+func _make_collision() -> CollisionShape3D:
+	var cs := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = body_size
+	cs.shape = shape
+	cs.position.y = body_size.y / 2.0
+	return cs
 
 # Полупрозрачный контур логического размера врага — тот самый "куб-хитбокс".
 # Нужен, чтобы видеть, под какой габарит подгоняется модель из Blender.
@@ -257,8 +276,15 @@ func _process(delta: float) -> void:
 		return
 
 	var stop_index: int = max(1, path_cells.size() - 3)
+	var base_pos := Constants.cell_to_world(path_cells[stop_index])
+
+	# Атаку базы засчитываем только когда враг реально у неё. В пробке прогресс
+	# убегает вперёд, а враг стоит далеко — иначе бил бы ратушу издалека.
 	if current_index >= stop_index:
-		_reach_base()
+		if global_position.distance_to(base_pos) <= Constants.CELL_SIZE:
+			_reach_base()
+			return
+		_move_towards(base_pos + _current_offset())
 		return
 
 	var from_pos := Constants.cell_to_world(path_cells[current_index])
@@ -275,11 +301,24 @@ func _process(delta: float) -> void:
 		_progress = 0.0
 		current_index += 1
 		if current_index >= stop_index:
-			position = Constants.cell_to_world(path_cells[stop_index]) + _current_offset()
-			_reach_base()
+			_move_towards(base_pos + _current_offset())
+			if global_position.distance_to(base_pos) <= Constants.CELL_SIZE:
+				_reach_base()
 			return
 
-	position = from_pos.lerp(to_pos, _progress) + _current_offset()
+	_move_towards(from_pos.lerp(to_pos, _progress) + _current_offset())
+
+# Идёт к точке маршрута и останавливается, если упёрся в другого врага.
+# Шаг ограничен, чтобы при обходе пробки враг не проскочил сквозь соседа.
+func _move_towards(target: Vector3) -> void:
+	var motion := target - global_position
+	motion.y = 0.0
+	var max_step := speed * Constants.CELL_SIZE * 2.0 * get_process_delta_time()
+	if motion.length() > max_step:
+		motion = motion.normalized() * max_step
+	if motion.length_squared() <= 0.000001:
+		return
+	move_and_collide(motion)
 
 func _reach_base() -> void:
 	_reached_base = true
