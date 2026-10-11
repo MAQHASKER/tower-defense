@@ -9,6 +9,9 @@ const LAYER_SOLDIER := 1 << 3
 # Размер коробки-заглушки в клетках (до появления модели из Blender)
 const SIZE_CELLS := Vector3(0.3, 0.6, 0.3)
 
+# Длина "щупа" вперёд в клетках. Если щуп упёрся в стену — солдат идёт вдоль неё.
+const AVOID_PROBE_CELLS := 0.45
+
 var hp: float = 50.0
 var max_hp: float = 50.0
 var damage: float = 5.0
@@ -66,33 +69,70 @@ func _process(delta: float) -> void:
 	if _current_target:
 		_engage_target(delta)
 	else:
-		_return_home(delta)
+		_return_home()
 
 func _engage_target(delta: float) -> void:
 	var dist := global_position.distance_to(_current_target.global_position)
 	var attack_dist_world := attack_range * Constants.CELL_SIZE
 
 	if dist > attack_dist_world:
-		var dir := (_current_target.global_position - global_position).normalized()
-		_move(dir * move_speed * Constants.CELL_SIZE * delta)
+		_move_towards(_current_target.global_position)
 	else:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
 			_current_target.take_damage(damage)
 			_attack_timer = attack_speed
 
-func _return_home(delta: float) -> void:
+func _return_home() -> void:
 	var dist := global_position.distance_to(home_position)
 	if dist > 0.1:
-		var dir := (home_position - global_position).normalized()
-		_move(dir * move_speed * Constants.CELL_SIZE * delta)
+		_move_towards(home_position)
 	else:
 		global_position = home_position
 
-# Двигается и останавливается у построек и других солдат
-func _move(motion: Vector3) -> void:
-	motion.y = 0.0
-	move_and_collide(motion)
+# Идёт к цели, обходя постройки и других солдат.
+# Простое движение «в лоб» не годится: солдат упирается в казарму и стоит,
+# поэтому до гоблина за ней он не дойдёт.
+func _move_towards(target: Vector3) -> void:
+	var to_target := target - global_position
+	to_target.y = 0.0
+	if to_target.length_squared() <= 0.000001:
+		velocity = Vector3.ZERO
+		move_and_slide()
+		return
+	var dir := to_target.normalized()
+	velocity = _avoid(dir) * move_speed * Constants.CELL_SIZE
+	move_and_slide()
+
+# Если прямо по курсу препятствие, идём не в лоб, а вдоль его стены
+func _avoid(dir: Vector3) -> Vector3:
+	var half_height := SIZE_CELLS.y * Constants.CELL_SIZE * 0.5
+	var from := global_position + Vector3(0, half_height, 0)
+	var to := from + dir * AVOID_PROBE_CELLS * Constants.CELL_SIZE
+
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	query.collision_mask = LAYER_BUILDING | LAYER_SOLDIER
+	var exclude: Array[RID] = [get_rid()]
+	query.exclude = exclude
+
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return dir
+
+	var normal: Vector3 = hit.normal
+	normal.y = 0.0
+	if normal.length_squared() < 0.0001:
+		return dir
+	normal = normal.normalized()
+
+	var tangent := normal.cross(Vector3.UP)
+	if tangent.length_squared() < 0.0001:
+		tangent = Vector3.RIGHT
+	tangent = tangent.normalized()
+	# обходим с той стороны, которая ближе к цели, и чуть отходим от стены
+	if tangent.dot(dir) < 0.0:
+		tangent = -tangent
+	return (tangent + normal * 0.35).normalized()
 
 func _find_enemy() -> Enemy:
 	var range_world := detect_range * Constants.CELL_SIZE
