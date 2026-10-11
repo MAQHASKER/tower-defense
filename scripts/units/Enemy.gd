@@ -13,6 +13,8 @@ var damage: float = 5.0
 var attack_speed: float = 1.0
 var reward: int = 10
 var can_be_blocked: bool = true
+# Огр «топчет» воинов: убивает с одного удара, не считаясь с их HP
+var trample: bool = false
 
 # Габариты в метрах: ширина (X), высота (Y), длина вдоль пути (Z)
 var body_size: Vector3 = Vector3.ONE
@@ -91,6 +93,7 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin", slot_index: int
 		_slot_cols = max(1, int(stats.get("slot_cols", 1)))
 		_slot_rows = max(1, int(stats.get("slot_rows", 1)))
 		can_be_blocked = stats.get("can_be_blocked", true)
+		trample = stats.get("trample", false)
 
 	_slot_offset = _compute_slot_offset(slot_index)
 
@@ -293,7 +296,7 @@ func _process(delta: float) -> void:
 		if global_position.distance_to(base_pos) <= Constants.CELL_SIZE:
 			_reach_base()
 			return
-		_move_towards(base_pos + _current_offset())
+		_move_towards(base_pos + _current_offset(), speed * Constants.CELL_SIZE * get_process_delta_time())
 		return
 
 	var from_pos := Constants.cell_to_world(path_cells[current_index])
@@ -304,30 +307,34 @@ func _process(delta: float) -> void:
 	if dir.length_squared() > 0.0001:
 		rotation.y = atan2(dir.x, dir.z)
 
-	_progress += speed * delta
+	# Идём прямо к центру следующей клетки, шаг — ровно своя скорость.
+	# Прогресс растёт только на реально пройденное расстояние: иначе
+	# застрявший в пробке враг «набирает» путь и потом летит пулей к ратуше.
+	var step := speed * Constants.CELL_SIZE * get_process_delta_time()
+	var moved := _move_towards(to_pos + _current_offset(), step)
+	_progress += moved / Constants.CELL_SIZE
 
 	if _progress >= 1.0:
-		_progress = 0.0
+		_progress -= 1.0
 		current_index += 1
 		if current_index >= stop_index:
-			_move_towards(base_pos + _current_offset())
+			_move_towards(base_pos + _current_offset(), step)
 			if global_position.distance_to(base_pos) <= Constants.CELL_SIZE:
 				_reach_base()
 			return
 
-	_move_towards(from_pos.lerp(to_pos, _progress) + _current_offset())
-
 # Идёт к точке маршрута и останавливается, если упёрся в другого врага.
-# Шаг ограничен, чтобы при обходе пробки враг не проскочил сквозь соседа.
-func _move_towards(target: Vector3) -> void:
+# Возвращает реально пройденное расстояние — по нему растёт прогресс пути.
+func _move_towards(target: Vector3, max_step: float) -> float:
 	var motion := target - global_position
 	motion.y = 0.0
-	var max_step := speed * Constants.CELL_SIZE * 2.0 * get_process_delta_time()
 	if motion.length() > max_step:
 		motion = motion.normalized() * max_step
 	if motion.length_squared() <= 0.000001:
-		return
+		return 0.0
+	var before := global_position
 	move_and_collide(motion)
+	return Vector2(global_position.x - before.x, global_position.z - before.z).length()
 
 func _reach_base() -> void:
 	_reached_base = true
@@ -343,7 +350,7 @@ func die() -> void:
 	queue_free()
 
 func _find_blocker() -> Soldier:
-	var range_world := 1.5 * Constants.CELL_SIZE   # радиус блокировки, в клетках
+	var range_world := 0.8 * Constants.CELL_SIZE   # радиус блокировки, в клетках
 	var closest: Soldier = null
 	var closest_dist := INF
 
@@ -360,5 +367,9 @@ func _find_blocker() -> Soldier:
 func _attack_blocker(soldier: Soldier, delta: float) -> void:
 	_attack_timer -= delta
 	if _attack_timer <= 0.0:
-		soldier.take_damage(damage)
+		if trample:
+			# огр затаптывает воина с одного удара
+			soldier.take_damage(soldier.hp)
+		else:
+			soldier.take_damage(damage)
 		_attack_timer = attack_speed

@@ -16,7 +16,10 @@ var hp: float = 50.0
 var max_hp: float = 50.0
 var damage: float = 5.0
 var attack_speed: float = 1.0
-var attack_range: float = 0.8
+# Зазор до поверхности врага, при котором начинается бой (в клетках).
+# Считается до граней коробки врага, а не до центра: у всадника центр
+# внутри длинного тела, и солдат залезал бы внутрь него.
+var attack_gap: float = 0.12
 var detect_range: float = 4.5
 var move_speed: float = 4.0
 var home_position: Vector3 = Vector3.ZERO
@@ -73,16 +76,27 @@ func _process(delta: float) -> void:
 		_return_home()
 
 func _engage_target(delta: float) -> void:
-	var dist := global_position.distance_to(_current_target.global_position)
-	var attack_dist_world := attack_range * Constants.CELL_SIZE
-
-	if dist > attack_dist_world:
+	if _surface_gap(_current_target) > attack_gap * Constants.CELL_SIZE:
 		_move_towards(_current_target.global_position)
 	else:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
 			_current_target.take_damage(damage)
 			_attack_timer = attack_speed
+
+# Зазор между коробкой солдата и коробкой врага. Ноль — они соприкасаются.
+func _surface_gap(enemy: Enemy) -> float:
+	var to_enemy := enemy.global_position - global_position
+	to_enemy.y = 0.0
+	# переводим в систему координат врага: X — поперёк, Z — вдоль
+	var local := Basis(Vector3.UP, -enemy.rotation.y) * to_enemy
+	var half := Vector2(enemy.body_size.x * 0.5, enemy.body_size.z * 0.5)
+	var outside := Vector2(
+		maxf(absf(local.x) - half.x, 0.0),
+		maxf(absf(local.z) - half.y, 0.0)
+	)
+	var self_half := SIZE_CELLS.x * Constants.CELL_SIZE * 0.5
+	return maxf(outside.length() - self_half, 0.0)
 
 func _return_home() -> void:
 	var dist := global_position.distance_to(home_position)

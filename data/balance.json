@@ -39,6 +39,7 @@
 	  "width": 1.4,
 	  "depth": 1.4,
 	  "height": 2.6,
+	  "trample": true,
 	  "slot_cols": 2,
 	  "slot_rows": 1,
 	  "can_be_blocked": true
