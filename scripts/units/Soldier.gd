@@ -58,7 +58,7 @@ func _process(delta: float) -> void:
 	if _current_target != null:
 		if not is_instance_valid(_current_target):
 			_release_target()
-		elif _current_target.claimed_by != self:
+		elif _is_claimed_by_other(_current_target):
 			# цель перехватил другой солдат
 			_release_target()
 		elif home_position.distance_to(_current_target.global_position) > detect_range * Constants.CELL_SIZE:
@@ -137,6 +137,8 @@ func _avoid(dir: Vector3) -> Vector3:
 
 # Один враг — один солдат. Если все враги в радиусе уже заняты, солдат
 # остаётся на точке сбора: иначе пятеро сбиваются в кучу на одном гоблине.
+# Исключение — враги, которых нельзя заблокировать (всадник): один солдат
+# его всё равно не удержит, поэтому бить его могут все, кто достаёт.
 func _find_enemy() -> Enemy:
 	var range_world := detect_range * Constants.CELL_SIZE
 	var closest: Enemy = null
@@ -145,7 +147,7 @@ func _find_enemy() -> Enemy:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if not is_instance_valid(enemy):
 			continue
-		if enemy.claimed_by != null and is_instance_valid(enemy.claimed_by):
+		if _is_claimed_by_other(enemy):
 			continue
 		var d := home_position.distance_to(enemy.global_position)
 		if d <= range_world and d < closest_dist:
@@ -154,10 +156,18 @@ func _find_enemy() -> Enemy:
 
 	return closest
 
+func _is_claimed_by_other(enemy: Enemy) -> bool:
+	if enemy == null or not enemy.can_be_blocked:
+		return false
+	if enemy.claimed_by == null or enemy.claimed_by == self:
+		return false
+	return is_instance_valid(enemy.claimed_by)
+
 func _set_target(enemy: Enemy) -> void:
 	_release_target()
 	_current_target = enemy
-	if enemy != null:
+	# Захват ставим только на блокируемых: незаблокированного ведут все
+	if enemy != null and enemy.can_be_blocked:
 		enemy.claimed_by = self
 
 func _release_target() -> void:

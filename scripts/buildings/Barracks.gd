@@ -43,8 +43,10 @@ static func _load_balance() -> Dictionary:
 func setup(barracks_cell: Vector2i, path_cells: Array[Vector2i]) -> void:
 	cell = barracks_cell
 	_path_cells = path_cells
-	rally_cell = _nearest_path_cell(barracks_cell)
 	add_to_group("barracks")
+	# Точка сбора уникальна: две казармы по бокам дороги не должны
+	# выставить всех своих солдат в одну и ту же клетку.
+	rally_cell = _nearest_free_path_cell(barracks_cell)
 
 	var balance := _load_balance()
 	if balance.has("barracks"):
@@ -86,6 +88,27 @@ func _nearest_path_cell(from: Vector2i) -> Vector2i:
 		if d < best_dist:
 			best_dist = d
 			best = c
+	return best
+
+# Ближайшая клетка пути, которую ещё не заняла другая казарма
+func _nearest_free_path_cell(from: Vector2i) -> Vector2i:
+	var taken := {}
+	for other in get_tree().get_nodes_in_group("barracks"):
+		if other == self or not (other is Barracks):
+			continue
+		taken[(other as Barracks).rally_cell] = true
+
+	var best := Vector2i(-1, -1)
+	var best_dist := INF
+	for c in _path_cells:
+		if taken.has(c):
+			continue
+		var d := Vector2(float(c.x - from.x), float(c.y - from.y)).length_squared()
+		if d < best_dist:
+			best_dist = d
+			best = c
+	if best.x < 0:
+		return _nearest_path_cell(from)
 	return best
 
 # Место солдата в клетке сбора: небольшой отряд в две шеренги
