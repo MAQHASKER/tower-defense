@@ -26,6 +26,10 @@ var _reached_base: bool = false
 var _visual: Node3D
 var _body_color: Color = Constants.COLOR_ENEMY
 
+# Отладочный контур хитбокса: показывает логический размер врага из
+# balance.json, под который подгоняется модель. Выключи перед релизом.
+const DEBUG_HITBOX := true
+
 # Раскладка врагов внутри одной клетки: X — поперёк пути, Z — вдоль
 var _slot_cols: int = 1
 var _slot_rows: int = 1
@@ -84,6 +88,8 @@ func setup(path: Array[Vector2i], enemy_type: String = "goblin", slot_index: int
 
 	_visual = _create_visual(model_path)
 	add_child(_visual)
+	if DEBUG_HITBOX:
+		add_child(_make_hitbox_debug())
 	# Визуал подгоняется по мировой AABB, поэтому враг обязан быть в дереве:
 	# WaveSpawner добавляет его ДО вызова setup().
 	_fit_visual(_visual)
@@ -113,6 +119,23 @@ func _create_visual(model_path: String) -> Node3D:
 			return node
 		push_warning("Враг: не удалось загрузить модель %s" % model_path)
 	return _make_placeholder_box()
+
+# Полупрозрачный контур логического размера врага — тот самый "куб-хитбокс".
+# Нужен, чтобы видеть, под какой габарит подгоняется модель из Blender.
+func _make_hitbox_debug() -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = body_size * 0.98
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.15, 1.0, 0.45, 0.16)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.no_depth_test = true
+	box.material = mat
+	mi.mesh = box
+	mi.position.y = body_size.y / 2.0
+	return mi
 
 func _make_placeholder_box() -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
