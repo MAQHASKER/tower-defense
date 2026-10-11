@@ -9,14 +9,16 @@ const RESPAWN_TIME := 15.0
 
 # Размеры в клетках, чтобы масштабироваться вместе с CELL_SIZE
 const SIZE_CELLS := Vector3(0.8, 0.8, 0.8)
-# Солдаты стоят на окружности этого радиуса. Он обязан быть больше половины
-# постройки плюс половина солдата (1.2 + 0.45 = 1.65 м), иначе они окажутся
-# внутри казармы. 0.65 клетки = 1.95 м.
-const SOLDIER_RADIUS_CELLS := 0.65
+# Раскладка солдат на клетке сбора: отряд в две шеренги
+const RALLY_COLS := 3
 
 var cell: Vector2i
+# Клетка сбора — ближайшая клетка пути. Солдаты встают на дорогу, а не
+# вокруг казармы, чтобы сразу перекрывать путь.
+var rally_cell: Vector2i
 var soldiers: Array[Soldier] = []
 var _respawn_queue: Array[float] = []
+var _path_cells: Array[Vector2i] = []
 
 var level: int = 1
 var base_cost: int = 150
@@ -38,8 +40,10 @@ static func _load_balance() -> Dictionary:
 			_balance_cache = data.get("towers", {})
 	return _balance_cache
 
-func setup(barracks_cell: Vector2i) -> void:
+func setup(barracks_cell: Vector2i, path_cells: Array[Vector2i]) -> void:
 	cell = barracks_cell
+	_path_cells = path_cells
+	rally_cell = _nearest_path_cell(barracks_cell)
 	add_to_group("barracks")
 
 	var balance := _load_balance()
@@ -73,20 +77,37 @@ func setup(barracks_cell: Vector2i) -> void:
 	for i in range(SOLDIER_COUNT):
 		_spawn_soldier(i)
 
+# Ближайшая клетка пути — на неё солдаты и встают
+func _nearest_path_cell(from: Vector2i) -> Vector2i:
+	var best := from
+	var best_dist := INF
+	for c in _path_cells:
+		var d := Vector2(float(c.x - from.x), float(c.y - from.y)).length_squared()
+		if d < best_dist:
+			best_dist = d
+			best = c
+	return best
+
+# Место солдата в клетке сбора: небольшой отряд в две шеренги
+func _rally_offset(index: int) -> Vector3:
+	var cols := RALLY_COLS
+	var col := index % cols
+	var row := int(index / float(cols))
+	var step := Constants.CELL_SIZE / 3.0
+	return Vector3(
+		(float(col) - float(cols - 1) * 0.5) * step,
+		0.0,
+		(float(row) - 0.5) * step
+	)
+
 func _spawn_soldier(index: int) -> void:
 	var soldier := Soldier.new()
-	var offset := _get_offset(index)
 	soldier.setup(soldier_hp, soldier_damage)
 	add_child(soldier)
-	var home := global_position + offset
+	var home := Constants.cell_to_world(rally_cell) + _rally_offset(index)
 	soldier.global_position = home
 	soldier.home_position = home
 	soldiers.append(soldier)
-
-func _get_offset(index: int) -> Vector3:
-	var angle := (float(index) / SOLDIER_COUNT) * TAU
-	var radius := SOLDIER_RADIUS_CELLS * Constants.CELL_SIZE
-	return Vector3(cos(angle) * radius, 0, sin(angle) * radius)
 
 func _process(delta: float) -> void:
 	var i := _respawn_queue.size() - 1
@@ -117,6 +138,7 @@ func get_stats_text() -> String:
 	lines.append("Воинов: %d" % SOLDIER_COUNT)
 	lines.append("HP воина: %.0f" % soldier_hp)
 	lines.append("Урон воина: %.0f" % soldier_damage)
+	lines.append("Сбор: клетка %s" % str(rally_cell))
 	return "\n".join(lines)
 
 func get_upgrade_cost() -> int:

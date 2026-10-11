@@ -17,6 +17,10 @@ var can_be_blocked: bool = true
 # Габариты в метрах: ширина (X), высота (Y), длина вдоль пути (Z)
 var body_size: Vector3 = Vector3.ONE
 
+# Какой солдат сейчас ведёт этого врага. Правило «один враг — один солдат»,
+# чтобы пятеро не сбивались в кучу на одном гоблине.
+var claimed_by: Soldier = null
+
 # Путь
 var path_cells: Array[Vector2i] = []
 var current_index: int = 0

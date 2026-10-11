@@ -91,7 +91,7 @@ func _try_build_tower(screen_pos: Vector2) -> void:
 		var barracks := Barracks.new()
 		barracks.position = Constants.cell_to_world(cell)
 		entities.add_child(barracks)
-		barracks.setup(cell)
+		barracks.setup(cell, path.cells)
 	else:
 		var tower := Tower.new()
 		tower.position = Constants.cell_to_world(cell)

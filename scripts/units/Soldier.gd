@@ -55,18 +55,19 @@ func setup(hp_val: float = 50.0, dmg: float = 5.0) -> void:
 	# home_position устанавливается снаружи, после add_child
 
 func _process(delta: float) -> void:
-	if _current_target:
+	if _current_target != null:
 		if not is_instance_valid(_current_target):
-			_current_target = null
-		else:
-			var d_home := home_position.distance_to(_current_target.global_position)
-			if d_home > detect_range * Constants.CELL_SIZE:
-				_current_target = null
+			_release_target()
+		elif _current_target.claimed_by != self:
+			# цель перехватил другой солдат
+			_release_target()
+		elif home_position.distance_to(_current_target.global_position) > detect_range * Constants.CELL_SIZE:
+			_release_target()
 
-	if not _current_target:
-		_current_target = _find_enemy()
+	if _current_target == null:
+		_set_target(_find_enemy())
 
-	if _current_target:
+	if _current_target != null:
 		_engage_target(delta)
 	else:
 		_return_home()
@@ -134,6 +135,8 @@ func _avoid(dir: Vector3) -> Vector3:
 		tangent = -tangent
 	return (tangent + normal * 0.35).normalized()
 
+# Один враг — один солдат. Если все враги в радиусе уже заняты, солдат
+# остаётся на точке сбора: иначе пятеро сбиваются в кучу на одном гоблине.
 func _find_enemy() -> Enemy:
 	var range_world := detect_range * Constants.CELL_SIZE
 	var closest: Enemy = null
@@ -142,6 +145,8 @@ func _find_enemy() -> Enemy:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if not is_instance_valid(enemy):
 			continue
+		if enemy.claimed_by != null and is_instance_valid(enemy.claimed_by):
+			continue
 		var d := home_position.distance_to(enemy.global_position)
 		if d <= range_world and d < closest_dist:
 			closest = enemy
@@ -149,12 +154,24 @@ func _find_enemy() -> Enemy:
 
 	return closest
 
+func _set_target(enemy: Enemy) -> void:
+	_release_target()
+	_current_target = enemy
+	if enemy != null:
+		enemy.claimed_by = self
+
+func _release_target() -> void:
+	if _current_target != null and is_instance_valid(_current_target) and _current_target.claimed_by == self:
+		_current_target.claimed_by = null
+	_current_target = null
+
 func take_damage(amount: float) -> void:
 	hp -= amount
 	if hp <= 0:
 		die()
 
 func die() -> void:
+	_release_target()
 	var parent_barracks = get_parent()
 	if parent_barracks and parent_barracks.has_method("on_soldier_died"):
 		parent_barracks.on_soldier_died()
