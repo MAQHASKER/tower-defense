@@ -5,6 +5,9 @@ extends CharacterBody3D
 # иначе враг мог бы застрять, задев постройку рядом с путём.
 const LAYER_ENEMY := 1 << 1
 
+# Насколько близко нужно подойти к центру клетки, чтобы считать её пройденной
+const ARRIVE_DISTANCE := 0.05
+
 # Характеристики — заполняются из balance.json через setup()
 var hp: float = 30.0
 var max_hp: float = 30.0
@@ -26,7 +29,6 @@ var claimed_by: Soldier = null
 # Путь
 var path_cells: Array[Vector2i] = []
 var current_index: int = 0
-var _progress: float = 0.0
 
 # Атака базы
 var _attack_timer: float = 0.0
@@ -307,34 +309,24 @@ func _process(delta: float) -> void:
 	if dir.length_squared() > 0.0001:
 		rotation.y = atan2(dir.x, dir.z)
 
-	# Идём прямо к центру следующей клетки, шаг — ровно своя скорость.
-	# Прогресс растёт только на реально пройденное расстояние: иначе
+	# Идём к центру следующей клетки, шаг — ровно своя скорость.
+	# Клетка меняется ТОЛЬКО когда враг реально до неё дошёл. Иначе
 	# застрявший в пробке враг «набирает» путь и потом летит пулей к ратуше.
+	var aim := to_pos + _current_offset()
 	var step := speed * Constants.CELL_SIZE * get_process_delta_time()
-	var moved := _move_towards(to_pos + _current_offset(), step)
-	_progress += moved / Constants.CELL_SIZE
-
-	if _progress >= 1.0:
-		_progress -= 1.0
+	_move_towards(aim, step)
+	if global_position.distance_to(aim) <= ARRIVE_DISTANCE:
 		current_index += 1
-		if current_index >= stop_index:
-			_move_towards(base_pos + _current_offset(), step)
-			if global_position.distance_to(base_pos) <= Constants.CELL_SIZE:
-				_reach_base()
-			return
 
-# Идёт к точке маршрута и останавливается, если упёрся в другого врага.
-# Возвращает реально пройденное расстояние — по нему растёт прогресс пути.
-func _move_towards(target: Vector3, max_step: float) -> float:
+# Идёт к точке маршрута и останавливается, если упёрся в другого врага
+func _move_towards(target: Vector3, max_step: float) -> void:
 	var motion := target - global_position
 	motion.y = 0.0
 	if motion.length() > max_step:
 		motion = motion.normalized() * max_step
 	if motion.length_squared() <= 0.000001:
-		return 0.0
-	var before := global_position
+		return
 	move_and_collide(motion)
-	return Vector2(global_position.x - before.x, global_position.z - before.z).length()
 
 func _reach_base() -> void:
 	_reached_base = true

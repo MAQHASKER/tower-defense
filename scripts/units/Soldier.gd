@@ -45,8 +45,10 @@ func setup(hp_val: float = 50.0, dmg: float = 5.0) -> void:
 	_mesh.position.y = box_size.y / 2.0
 	add_child(_mesh)
 
+	# Солдаты не сталкиваются друг с другом: в тесноте они толкались коробками
+	# и постоянно дёргались. Друг от друга их держит строй на точке сбора.
 	collision_layer = LAYER_SOLDIER
-	collision_mask = LAYER_BUILDING | LAYER_SOLDIER
+	collision_mask = LAYER_BUILDING
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 
 	var cs := CollisionShape3D.new()
@@ -126,7 +128,7 @@ func _avoid(dir: Vector3) -> Vector3:
 	var to := from + dir * AVOID_PROBE_CELLS * Constants.CELL_SIZE
 
 	var query := PhysicsRayQueryParameters3D.create(from, to)
-	query.collision_mask = LAYER_BUILDING | LAYER_SOLDIER
+	query.collision_mask = LAYER_BUILDING
 	var exclude: Array[RID] = [get_rid()]
 	query.exclude = exclude
 

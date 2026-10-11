@@ -6,8 +6,6 @@ const StageLoader := preload("res://scripts/StageLoader.gd")
 const WAVE_INTERVAL := 15.0   # для теста 15 сек (в дизайне 30)
 const PACK_INTERVAL := 2.0    # пауза между пачками внутри волны
 const EARLY_START_BONUS := 25
-# Пауза между досрочными стартами: без неё можно выкликать все волны разом
-const EARLY_START_COOLDOWN := 3.0
 # Радиус свободной зоны у начала пути, в клетках
 const SPAWN_ZONE_CELLS := 2.0
 
@@ -126,7 +124,7 @@ func _on_wave_start_requested() -> void:
 		return
 	if _next_wave_index >= _waves.size():
 		return   # все волны уже заспавнены
-	if _time - _last_early_start < EARLY_START_COOLDOWN:
+	if _time - _last_early_start < Constants.EARLY_START_COOLDOWN:
 		return   # кнопку зажали — не выпускаем волны одна за другой
 	_last_early_start = _time
 	_start_wave(_next_wave_index)

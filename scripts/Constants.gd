@@ -9,6 +9,10 @@ const MAP_HEIGHT := 24
 # Поставь true, чтобы вернуть модель башни лучника и гоблина.
 const USE_MODELS := false
 
+# Пауза между досрочными стартами волн. Лежит здесь, а не в WaveSpawner,
+# потому что кнопка «Начать волну» показывает этот же кулдаун
+const EARLY_START_COOLDOWN := 3.0
+
 const COLOR_GROUND := Color(0.3, 0.5, 0.3)
 const COLOR_PATH   := Color(0.6, 0.5, 0.4)
 const COLOR_TOWER  := Color(0.4, 0.4, 0.8)
