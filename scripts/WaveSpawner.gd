@@ -16,6 +16,9 @@ var _total_enemies: int = 0
 var _spawned_enemies: int = 0
 var _all_spawned: bool = false
 
+# Счётчики слотов внутри клетки, отдельно на каждый тип врага
+var _slot_counters: Dictionary = {}
+
 @onready var entities: Node3D = get_parent().get_node("Entities")
 
 func _ready() -> void:
@@ -61,9 +64,17 @@ func _spawn_wave_async(wave: Dictionary) -> void:
 
 func _spawn_enemy(enemy_type: String) -> void:
 	var enemy := Enemy.new()
-	enemy.setup(get_parent().path.cells, enemy_type)
+	# Сначала в дерево: setup() замеряет модель врага по мировым координатам
 	entities.add_child(enemy)
+	enemy.setup(get_parent().path.cells, enemy_type, _take_slot(enemy_type))
 	_spawned_enemies += 1
+
+# Слоты внутри клетки раздаются по кругу для каждого типа врага
+func _take_slot(enemy_type: String) -> int:
+	var total: int = max(1, Enemy.get_slot_count(enemy_type))
+	var slot: int = _slot_counters.get(enemy_type, 0)
+	_slot_counters[enemy_type] = (slot + 1) % total
+	return slot
 
 func _check_victory() -> void:
 	if GameManager.is_game_over:
