@@ -4,7 +4,7 @@ extends Node3D
 const StageLoader := preload("res://scripts/StageLoader.gd")
 
 const WAVE_INTERVAL := 15.0   # для теста 15 сек (в дизайне 30)
-const SPAWN_INTERVAL := 0.8   # задержка между врагами внутри волны
+const PACK_INTERVAL := 2.0    # пауза между пачками внутри волны
 const EARLY_START_BONUS := 25
 
 var _waves: Array = []
@@ -35,9 +35,9 @@ func _load_stage(stage_id: int) -> void:
 	if _waves.is_empty():
 		push_error("Этап %d не найден или в нём нет волн" % stage_id)
 		return
-	for wave in _waves:
-		for entry in wave.enemies:
-			_total_enemies += entry.count
+	for wave: Dictionary in _waves:
+		for entry: Dictionary in wave.enemies:
+			_total_enemies += int(entry.get("count", 0))
 
 func _process(delta: float) -> void:
 	_time += delta
@@ -56,11 +56,24 @@ func _start_wave(index: int) -> void:
 	GameManager.next_wave()
 	_spawn_wave_async(_waves[index])
 
+# Враги выходят пачками. Размер пачки = размер раскладки в клетке, поэтому
+# группа сразу занимает клетку целиком: 9 гоблинов, 3 всадника, 2 огра.
+# Внутри пачки враги появляются в одном кадре — иначе они растянутся
+# по пути и группы не будет видно.
 func _spawn_wave_async(wave: Dictionary) -> void:
-	for entry in wave.enemies:
-		for i in range(entry.count):
-			_spawn_enemy(entry.type)
-			await get_tree().create_timer(SPAWN_INTERVAL).timeout
+	for entry: Dictionary in wave.enemies:
+		var enemy_type: String = String(entry.get("type", "goblin"))
+		var pack_size: int = int(max(1, Enemy.get_slot_count(enemy_type)))
+		var remaining: int = int(entry.get("count", 1))
+		while remaining > 0:
+			var in_pack: int = int(min(pack_size, remaining))
+			# счётчик слотов с нуля — пачка ложится ровным блоком
+			_slot_counters[enemy_type] = 0
+			for i in range(in_pack):
+				_spawn_enemy(enemy_type)
+			remaining -= in_pack
+			if remaining > 0:
+				await get_tree().create_timer(PACK_INTERVAL).timeout
 
 func _spawn_enemy(enemy_type: String) -> void:
 	var enemy := Enemy.new()
