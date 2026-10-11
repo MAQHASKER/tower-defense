@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GameManager="*uid://dsyow7v6wryw0"
 McpInteractionServer="*res://autoload/mcp_interaction_server.gd"
+
 [display]
 
 window/stretch/mode="canvas_items"

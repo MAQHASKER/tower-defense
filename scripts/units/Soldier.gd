@@ -12,6 +12,14 @@ const SIZE_CELLS := Vector3(0.3, 0.6, 0.3)
 # Длина "щупа" вперёд в клетках. Если щуп упёрся в стену — солдат идёт вдоль неё.
 const AVOID_PROBE_CELLS := 0.45
 
+# Мягкое расталкивание. Жёсткая коллизия между солдатами заставляла их дрожать,
+# толкаясь коробками, а полное её отсутствие — слипаться. Поэтому разводим
+# силой, пропорциональной перекрытию.
+# Радиус обязан быть МЕНЬШЕ шага строя (CELL_SIZE / 3 = 1.0 м), иначе солдаты
+# начнут расталкивать друг друга прямо на точке сбора и снова задрожат.
+const SEPARATION_RADIUS_CELLS := 0.31
+const SEPARATION_SPEED := 3.0
+
 var hp: float = 50.0
 var max_hp: float = 50.0
 var damage: float = 5.0
@@ -78,9 +86,17 @@ func _process(delta: float) -> void:
 		_return_home()
 
 func _engage_target(delta: float) -> void:
-	if _surface_gap(_current_target) > attack_gap * Constants.CELL_SIZE:
-		_move_towards(_current_target.global_position)
-	else:
+	var in_range: bool = _surface_gap(_current_target) <= attack_gap * Constants.CELL_SIZE
+	var dir := Vector3.ZERO
+	if not in_range:
+		dir = _current_target.global_position - global_position
+		dir.y = 0.0
+		if dir.length_squared() > 0.000001:
+			dir = dir.normalized()
+	# двигаемся всегда — даже в бою, чтобы мягко развестись с соседями
+	_move(dir)
+
+	if in_range:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
 			_current_target.take_damage(damage)
@@ -101,25 +117,37 @@ func _surface_gap(enemy: Enemy) -> float:
 	return maxf(outside.length() - self_half, 0.0)
 
 func _return_home() -> void:
-	var dist := global_position.distance_to(home_position)
+	var to_home := home_position - global_position
+	to_home.y = 0.0
+	var dist := to_home.length()
+	var dir := Vector3.ZERO
 	if dist > 0.1:
-		_move_towards(home_position)
-	else:
-		global_position = home_position
+		dir = to_home.normalized()
+	_move(dir)
 
-# Идёт к цели, обходя постройки и других солдат.
-# Простое движение «в лоб» не годится: солдат упирается в казарму и стоит,
-# поэтому до гоблина за ней он не дойдёт.
-func _move_towards(target: Vector3) -> void:
-	var to_target := target - global_position
-	to_target.y = 0.0
-	if to_target.length_squared() <= 0.000001:
-		velocity = Vector3.ZERO
-		move_and_slide()
-		return
-	var dir := to_target.normalized()
-	velocity = _avoid(dir) * move_speed * Constants.CELL_SIZE
+# Двигается в заданном направлении, обходя постройки, и всегда применяет
+# мягкое расталкивание — даже когда стоит на месте. Иначе в бою солдаты,
+# дошедшие до врага, переставали двигаться и слипались.
+func _move(dir: Vector3) -> void:
+	var steer := Vector3.ZERO
+	if dir.length_squared() > 0.000001:
+		steer = _avoid(dir) * move_speed * Constants.CELL_SIZE
+	velocity = steer + _separation() * SEPARATION_SPEED
 	move_and_slide()
+
+# Вектор расталкивания от соседей: длина равна глубине перекрытия в метрах
+func _separation() -> Vector3:
+	var push := Vector3.ZERO
+	var radius := SEPARATION_RADIUS_CELLS * Constants.CELL_SIZE
+	for other in get_tree().get_nodes_in_group("soldiers"):
+		if other == self or not is_instance_valid(other):
+			continue
+		var away: Vector3 = global_position - other.global_position
+		away.y = 0.0
+		var dist := away.length()
+		if dist > 0.001 and dist < radius:
+			push += away.normalized() * (radius - dist)
+	return push
 
 # Если прямо по курсу препятствие, идём не в лоб, а вдоль его стены
 func _avoid(dir: Vector3) -> Vector3:
